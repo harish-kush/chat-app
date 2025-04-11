@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat App</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.2/socket.io.js" crossorigin="anonymous"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #4facfe, #00f2fe);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+
+    .chat-container {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 28px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      width: 80%;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background-color: #fff;
+      color: #0078d4;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #e0e0e0;
+    }
+
+    #messages-container {
+      margin-top: 20px;
+      text-align: left;
+      max-height: 200px;
+      overflow-y: auto;
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    #messages-container div {
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    strong {
+      color: #ffd700;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <h1>💬 Group Chat</h1>
+    <div id="new-user-form">
+      <input type="text" id="name" name="name" placeholder="Enter your name" required />
+      <br />
+      <button type="button" onclick="setUserName()">Join Chat Room</button>
+    </div>
+  </div>
+
+  <script>
+    var socket = io();
+    var user;
+
+    function setUserName() {
+      var name = document.getElementById("name").value;
+      if (name.length > 0) {
+        socket.emit('setUserName', name);
+      }
+    }
+
+    socket.on('userExists', function () {
+      alert("Username already taken. Please choose another.");
+    });
+
+    socket.on('userSet', function (data) {
+      user = data.username;
+      document.querySelector('.chat-container').innerHTML = `
+        <h1>👋 Welcome, ${user}</h1>
+        <input type="text" id="message" placeholder="Type your message" />
+        <br />
+        <button onclick="sendMessage()">Send</button>
+        <div id="messages-container"></div>
+      `;
+    });
+
+    function sendMessage() {
+      var message = document.getElementById('message').value;
+      if (message !== '') {
+        document.getElementById('message').value = '';
+        socket.emit('msg', {
+          message: message,
+          user: user
+        });
+      }
+    }
+
+    socket.on('newmsg', function (data) {
+      if (user) {
+        document.getElementById('messages-container').innerHTML += `
+          <div><strong>${data.user}</strong>: ${data.message}</div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
